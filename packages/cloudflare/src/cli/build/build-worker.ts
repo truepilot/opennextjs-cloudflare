@@ -152,6 +152,23 @@ export function patchEnhanceGlobals(code: string) {
 }
 
 /**
+ *
+ * `loadInstrumentationModule` (https://github.com/vercel/next.js/blob/5b7833e3/packages/next/src/server/next-server.ts#L301)
+ * calls `module.findSourceMap` (https://nodejs.org/api/module.html#modulefindsourcemappath) which we haven't implemented
+ * causing a runtime error.
+ *
+ * TODO: this should ideally be done in a more robust way with ts-morph
+ *
+ * TODO: investigate and better understand the issue, is it ok to skip this function?
+ */
+export function patchLoadInstrumentationModule(code: string) {
+  return code.replaceAll(
+    `async loadInstrumentationModule() {`,
+    `async loadInstrumentationModule() { return;`
+  );
+}
+
+/**
  * This function applies string replacements on the bundled worker code necessary to get it to run in workerd
  *
  * Needless to say all the logic in this function is something we should avoid as much as possible!
@@ -173,6 +190,7 @@ async function updateWorkerBundledCode(workerOutputFile: string, config: Config)
   patchedCode = inlineMiddlewareManifestRequire(patchedCode, config);
   patchedCode = patchExceptionBubbling(patchedCode);
   patchedCode = patchEnhanceGlobals(patchedCode);
+  patchedCode = patchLoadInstrumentationModule(patchedCode);
 
   await writeFile(workerOutputFile, patchedCode);
 }
