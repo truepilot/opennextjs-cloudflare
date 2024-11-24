@@ -1,6 +1,6 @@
 import { cpSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
+import { dirname, join, normalize } from "node:path";
 
 import { buildNextjsApp, setStandaloneBuildMode } from "@opennextjs/aws/build/buildNextApp.js";
 import { compileOpenNextConfig } from "@opennextjs/aws/build/compileConfig.js";
@@ -27,9 +27,9 @@ export async function build(projectOpts: ProjectOptions): Promise<void> {
 
   showWarningOnWindows();
 
-  const baseDir = projectOpts.sourceDir;
+  const baseDir = normalize(projectOpts.sourceDir);
   const require = createRequire(import.meta.url);
-  const openNextDistDir = dirname(require.resolve("@opennextjs/aws/index.js"));
+  const openNextDistDir = normalize(dirname(require.resolve("@opennextjs/aws/index.js")));
 
   const { config, buildDir } = await compileOpenNextConfig(baseDir);
 
@@ -68,7 +68,11 @@ export async function build(projectOpts: ProjectOptions): Promise<void> {
   createStaticAssets(options);
 
   // Copy the .next directory to the output directory so it can be mutated.
-  cpSync(join(projectOpts.sourceDir, ".next"), join(projectOpts.outputDir, ".next"), { recursive: true });
+  cpSync(
+    normalize(join(projectOpts.sourceDir, ".next")), 
+    normalize(join(projectOpts.outputDir, ".next")), 
+    { recursive: true }
+  );
 
   const projConfig = getConfig(projectOpts);
 
